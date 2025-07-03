@@ -1,13 +1,51 @@
+interface TelegramWebAppUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+}
+
+interface TelegramWebAppInitData {
+  query_id?: string;
+  user?: TelegramWebAppUser;
+  auth_date?: string;
+  hash?: string;
+}
+
 interface TelegramWebApp {
-  openTelegramLink: (url: string) => void;
+  initData: string;
+  initDataUnsafe: TelegramWebAppInitData;
+  version: string;
+  platform: string;
+  colorScheme: string;
+  themeParams: {
+    bg_color: string;
+    text_color: string;
+    hint_color: string;
+    link_color: string;
+    button_color: string;
+    button_text_color: string;
+  };
+  isExpanded: boolean;
+  viewportHeight: number;
+  viewportStableHeight: number;
+  headerColor: string;
+  backgroundColor: string;
+  ready(): void;
+  expand(): void;
+  close(): void;
+  openTelegramLink(url: string): void;
 }
 
 interface Telegram {
   WebApp?: TelegramWebApp;
 }
 
-interface Window {
-  Telegram?: Telegram;
+declare global {
+  interface Window {
+    Telegram?: Telegram;
+  }
 }
 
-export {}; 
+export type { TelegramWebAppUser, TelegramWebAppInitData, TelegramWebApp }; 

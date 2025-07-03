@@ -286,6 +286,7 @@
     border-radius: 8px;
     color: rgba(255, 255, 255, 0.87);
     font-size: 1rem;
+    box-sizing: border-box;
   }
 
   input:focus {

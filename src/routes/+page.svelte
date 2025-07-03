@@ -4,6 +4,7 @@
   import BottomNav from '$lib/components/BottomNav.svelte';
   import Settings from '$lib/components/Settings.svelte';
   import AddressNews from '$lib/components/AddressNews.svelte';
+  import type { TelegramWebApp, TelegramWebAppUser } from '$lib/types/telegram';
   /** @type {import('./$types').PageData} */
   export let data;
 
@@ -16,6 +17,14 @@
     likes_count: number;
     dislikes_count: number;
     category?: string;
+  }
+
+  interface TelegramUser {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    photo_url?: string;
   }
 
   interface Category {
@@ -42,6 +51,24 @@
   let showImages: boolean = true;
   let darkMode: boolean = true;
   let selectedCategory: string | null = null;
+  let telegramUser: TelegramUser | null = null;
+
+  $: isInTelegramWebApp = typeof window !== 'undefined' && 
+    window?.Telegram?.WebApp?.initData && 
+    window?.Telegram?.WebApp?.initData.length > 0;
+
+  $: if (isInTelegramWebApp && window?.Telegram?.WebApp) {
+    try {
+      const webApp = window.Telegram.WebApp;
+      if (webApp.initDataUnsafe?.user) {
+        telegramUser = webApp.initDataUnsafe.user;
+      }
+    } catch (e) {
+      console.error('Ошибка при получении данных пользователя:', e);
+    }
+  }
+
+  $: showTelegramPrompt = !isInTelegramWebApp && activeTab === 'settings';
 
   function determineCategory(item: NewsItem): string {
     const text = `${item.title} ${item.content}`.toLowerCase();
@@ -52,8 +79,6 @@
     }
     return 'Другое';
   }
-
-  $: isInTelegramWebApp = typeof window !== 'undefined' && window?.Telegram?.WebApp !== undefined;
 
   $: processedNews = data.news?.map((item: NewsItem) => ({
     ...item,
@@ -113,7 +138,7 @@
 </script>
 
 <div class="container" class:no-images={!showImages}>
-  {#if !isInTelegramWebApp}
+  {#if showTelegramPrompt}
     <div class="telegram-prompt">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -121,7 +146,10 @@
         <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <h2>Откройте в Telegram</h2>
-      <p>Для доступа ко всем функциям, пожалуйста, откройте это приложение в Telegram.</p>
+      <p>Для доступа к настройкам, пожалуйста, откройте это приложение в Telegram.</p>
+      <a href="https://t.me/your_bot_username/app" class="telegram-button">
+        Открыть миниапу
+      </a>
     </div>
   {:else}
     {#if activeTab === 'news'}
@@ -483,6 +511,7 @@
     border-radius: 16px;
     margin: 2rem auto;
     max-width: 400px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .telegram-prompt svg {
@@ -496,8 +525,31 @@
   }
 
   .telegram-prompt p {
-    margin: 0;
+    margin: 0 0 1.5rem;
     color: rgba(255, 255, 255, 0.6);
+  }
+
+  .telegram-prompt .telegram-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    background: #2563eb;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .telegram-prompt .telegram-button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+  }
+
+  .telegram-prompt .telegram-button:active {
+    transform: translateY(0);
   }
 
   .categories-chips {
