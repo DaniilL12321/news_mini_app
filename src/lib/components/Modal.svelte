@@ -50,13 +50,17 @@
     background: #1a1a1a;
     width: 100%;
     max-height: 80vh;
+    max-width: 80vh;
     border-radius: 24px 24px 0 0;
     padding: 24px;
     position: relative;
     overflow-y: auto;
+    overflow-x: hidden;
     transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   .modal-content.show {

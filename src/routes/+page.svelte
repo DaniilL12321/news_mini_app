@@ -1,5 +1,9 @@
 <script lang="ts">
   import Modal from '$lib/components/Modal.svelte';
+  import SearchBar from '$lib/components/SearchBar.svelte';
+  import BottomNav from '$lib/components/BottomNav.svelte';
+  import Settings from '$lib/components/Settings.svelte';
+  import AddressNews from '$lib/components/AddressNews.svelte';
   /** @type {import('./$types').PageData} */
   export let data;
 
@@ -11,9 +15,72 @@
     link: string;
     likes_count: number;
     dislikes_count: number;
+    category?: string;
   }
 
+  interface Category {
+    emoji: string;
+    name: string;
+    pattern: RegExp;
+  }
+
+  const categories: Category[] = [
+    { emoji: '💻', name: 'Технологии', pattern: /технолог|цифров|компьютер|интернет|IT|связь/i },
+    { emoji: '💼', name: 'Бизнес', pattern: /бизнес|предприним|экономи|работ|ваканс|требу|набор/i },
+    { emoji: '🏛️', name: 'Политика', pattern: /политик|закон|администрац|власт|государств/i },
+    { emoji: '🔬', name: 'Наука', pattern: /наук|исследован|открыт|учен/i },
+    { emoji: '⚽', name: 'Спорт', pattern: /спорт|соревнован|турнир|чемпионат/i },
+    { emoji: '🎭', name: 'Культура', pattern: /культур|искусств|театр|музе|выставк/i },
+    { emoji: '👥', name: 'Общество', pattern: /общест|социальн|населен|гражд|памятк|внимани/i },
+    { emoji: '⚡', name: 'ЖКХ', pattern: /жкх|электроснабжен|водоснабжен|отключен|энерг/i }
+  ];
+
   let selectedNews: NewsItem | null = null;
+  let activeTab: 'news' | 'address' | 'settings' = 'news';
+  let searchQuery: string = '';
+  let sortBy: 'date' | 'popularity' = 'date';
+  let showImages: boolean = true;
+  let darkMode: boolean = true;
+  let selectedCategory: string | null = null;
+
+  function determineCategory(item: NewsItem): string {
+    const text = `${item.title} ${item.content}`.toLowerCase();
+    for (const category of categories) {
+      if (category.pattern.test(text)) {
+        return category.name;
+      }
+    }
+    return 'Другое';
+  }
+
+  $: isInTelegramWebApp = typeof window !== 'undefined' && window?.Telegram?.WebApp !== undefined;
+
+  $: processedNews = data.news?.map((item: NewsItem) => ({
+    ...item,
+    category: determineCategory(item)
+  })) ?? [];
+
+  $: filteredNews = processedNews
+    .filter((item: NewsItem) => {
+      if (selectedCategory && item.category !== selectedCategory) {
+        return false;
+      }
+      const query = searchQuery.toLowerCase();
+      return item.title.toLowerCase().includes(query) || 
+             item.content.toLowerCase().includes(query);
+    })
+    .sort((item1: NewsItem, item2: NewsItem) => {
+      if (sortBy === 'date') {
+        return new Date(item2.date).getTime() - new Date(item1.date).getTime();
+      } else {
+        return (item2.likes_count - item2.dislikes_count) - (item1.likes_count - item1.dislikes_count);
+      }
+    });
+
+  $: categoryCounts = categories.map(cat => ({
+    ...cat,
+    count: processedNews.filter((item: NewsItem) => item.category === cat.name).length
+  }));
 
   /** @param {string} dateString */
   function formatDate(dateString: string): string {
@@ -27,7 +94,6 @@
 
   /** @param {string} content */
   function extractImageUrls(content: string): string[] {
-    // Поддержка разных вариантов записи эмодзи камеры и текста
     const regex = /(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif))/g;
     const matches = [...content.matchAll(regex)];
     return matches.map(match => match[1]);
@@ -35,7 +101,6 @@
 
   /** @param {string} content */
   function removeImageUrls(content: string): string {
-    // Удаляем ссылки на изображения из текста
     return content.replace(/(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif)/g, '').trim();
   }
 
@@ -47,56 +112,104 @@
   }
 </script>
 
-<div class="container">
-  <h1>Новости</h1>
-  
-  {#if 'error' in data && data.error}
-    <div class="error">Ошибка: {data.error}</div>
-  {:else if 'news' in data && Array.isArray(data.news)}
-    <div class="news-grid">
-      {#each data.news as item}
-        <div class="news-card" on:click={() => selectedNews = item}>
-          <div class="news-image-container">
-            {#if extractImageUrls(item.content).length > 0}
-              <img 
-                src={extractImageUrls(item.content)[0]} 
-                alt="Изображение к новости"
-                class="news-thumbnail"
-                loading="lazy"
-              />
-            {:else}
-              <div class="news-thumbnail placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 16L8.586 11.414C8.96106 11.0389 9.46967 10.8284 10 10.8284C10.5303 10.8284 11.0389 11.0389 11.414 11.414L16 16M14 14L15.586 12.414C15.9611 12.0389 16.4697 11.8284 17 11.8284C17.5303 11.8284 18.0389 12.0389 18.414 12.414L20 14M14 8H14.01M6 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V6C20 5.46957 19.7893 4.96086 19.4142 4.58579C19.0391 4.21071 18.5304 4 18 4H6C5.46957 4 4.96086 4.21071 4.58579 4.58579C4.21071 4.96086 4 5.46957 4 6V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-            {/if}
-            <div class="news-date-badge">{formatDate(item.date)}</div>
-          </div>
-          <div class="news-preview">
-            <h2>{item.title}</h2>
-            <p class="news-excerpt">{truncateText(item.content)}</p>
-            <div class="news-footer">
-              <div class="reactions">
-                <span class="reaction">
-                  👍 {item.likes_count || 0}
-                </span>
-                <span class="reaction">
-                  👎 {item.dislikes_count || 0}
-                </span>
-              </div>
-              <div class="read-more">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+<div class="container" class:no-images={!showImages}>
+  {#if !isInTelegramWebApp}
+    <div class="telegram-prompt">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>Откройте в Telegram</h2>
+      <p>Для доступа ко всем функциям, пожалуйста, откройте это приложение в Telegram.</p>
+    </div>
+  {:else}
+    {#if activeTab === 'news'}
+      <h1>Новости</h1>
+      <SearchBar bind:value={searchQuery} />
+      
+      <div class="categories-chips">
+        {#each categoryCounts as { emoji, name, count }}
+          <button 
+            class="category-chip" 
+            class:active={selectedCategory === name}
+            on:click={() => selectedCategory = selectedCategory === name ? null : name}
+          >
+            <span>{emoji} {name}</span>
+            <span class="count">{count}</span>
+          </button>
+        {/each}
+      </div>
+
+      {#if 'error' in data && data.error}
+        <div class="error">Ошибка: {data.error}</div>
+      {:else if filteredNews.length > 0}
+        <div class="news-grid">
+          {#each filteredNews as item}
+            <div class="news-card" on:click={() => selectedNews = item}>
+              {#if showImages}
+                <div class="news-image-container">
+                  {#if extractImageUrls(item.content).length > 0}
+                    <img 
+                      src={extractImageUrls(item.content)[0]} 
+                      alt="Изображение к новости"
+                      class="news-thumbnail"
+                      loading="lazy"
+                    />
+                  {:else}
+                    <div class="news-thumbnail placeholder">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 16L8.586 11.414C8.96106 11.0389 9.46967 10.8284 10 10.8284C10.5303 10.8284 11.0389 11.0389 11.414 11.414L16 16M14 14L15.586 12.414C15.9611 12.0389 16.4697 11.8284 17 11.8284C17.5303 11.8284 18.0389 12.0389 18.414 12.414L20 14M14 8H14.01M6 20H18C18.5304 20 19.0391 19.7893 19.4142 19.4142C19.7893 19.0391 20 18.5304 20 18V6C20 5.46957 19.7893 4.96086 19.4142 4.58579C19.0391 4.21071 18.5304 4 18 4H6C5.46957 4 4.96086 4.21071 4.58579 4.58579C4.21071 4.96086 4 5.46957 4 6V18C4 18.5304 4.21071 19.0391 4.58579 19.4142C4.96086 19.7893 5.46957 20 6 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  {/if}
+                  <div class="news-date-badge">{formatDate(item.date)}</div>
+                </div>
+              {/if}
+              <div class="news-preview">
+                <h2>{item.title}</h2>
+                <p class="news-excerpt">{truncateText(item.content)}</p>
+                <div class="news-footer">
+                  <div class="reactions">
+                    <span class="reaction">
+                      👍 {item.likes_count}
+                    </span>
+                    <span class="reaction">
+                      👎 {item.dislikes_count}
+                    </span>
+                  </div>
+                  <div class="read-more">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          {/each}
         </div>
-      {/each}
-    </div>
+      {:else}
+        <div class="no-results">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
+          </svg>
+          <p>Новости не найдены</p>
+        </div>
+      {/if}
+    {:else if activeTab === 'address'}
+      <AddressNews news={processedNews} />
+    {:else if activeTab === 'settings'}
+      <Settings 
+        bind:sortBy
+        bind:showImages
+        bind:darkMode
+        {isInTelegramWebApp}
+      />
+    {/if}
   {/if}
 </div>
+
+<BottomNav bind:activeTab />
 
 {#if selectedNews}
   <Modal 
@@ -107,7 +220,7 @@
       <h2>{selectedNews.title}</h2>
       <div class="news-date">{formatDate(selectedNews.date)}</div>
       
-      {#if extractImageUrls(selectedNews.content).length > 0}
+      {#if showImages && extractImageUrls(selectedNews.content).length > 0}
         <div class="news-images">
           {#each extractImageUrls(selectedNews.content) as imageUrl}
             <img 
@@ -136,10 +249,10 @@
 
       <div class="reactions">
         <span class="reaction">
-          👍 {selectedNews.likes_count || 0}
+          👍 {selectedNews.likes_count}
         </span>
         <span class="reaction">
-          👎 {selectedNews.dislikes_count || 0}
+          👎 {selectedNews.dislikes_count}
         </span>
       </div>
     </div>
@@ -150,6 +263,7 @@
   :global(body) {
     background: #121212;
     color: rgba(255, 255, 255, 0.87);
+    padding-bottom: 72px;
   }
 
   .container {
@@ -159,10 +273,13 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
   }
 
+  .container.no-images .news-card {
+    grid-template-columns: 1fr;
+  }
+
   h1 {
     color: rgba(255, 255, 255, 0.87);
     text-align: center;
-    margin-bottom: 2rem;
     font-size: 2rem;
     font-weight: 700;
   }
@@ -311,7 +428,9 @@
   }
 
   .news-image {
-    width: 100%;
+    max-width: 100%;
+    max-height: 40vh;
+    margin: 0 auto;
     border-radius: 12px;
     overflow: hidden;
   }
@@ -346,6 +465,91 @@
     transform: translateY(0);
   }
 
+  .no-results {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .no-results svg {
+    margin-bottom: 1rem;
+    opacity: 0.6;
+  }
+
+  .telegram-prompt {
+    text-align: center;
+    padding: 2rem;
+    background: #1e1e1e;
+    border-radius: 16px;
+    margin: 2rem auto;
+    max-width: 400px;
+  }
+
+  .telegram-prompt svg {
+    margin-bottom: 1rem;
+    color: #2563eb;
+  }
+
+  .telegram-prompt h2 {
+    margin: 0 0 0.5rem;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .telegram-prompt p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .categories-chips {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .categories-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.87);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .category-chip:hover {
+    background: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .category-chip.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+  }
+
+  .count {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
+  }
+
   @media (max-width: 640px) {
     .news-grid {
       grid-template-columns: 1fr;
@@ -358,6 +562,11 @@
     h1 {
       font-size: 1.75rem;
       margin-bottom: 1.5rem;
+    }
+
+    .category-chip {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
     }
   }
 </style>
