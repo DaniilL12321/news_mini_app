@@ -55,7 +55,7 @@
 
   $: isInTelegramWebApp = typeof window !== 'undefined' && 
     window?.Telegram?.WebApp?.initData && 
-    window?.Telegram?.WebApp?.initData.length > 0;
+    window?.Telegram?.WebApp?.initData.length > 0 ? true : false;
 
   $: if (isInTelegramWebApp && window?.Telegram?.WebApp) {
     try {
@@ -174,7 +174,12 @@
       {:else if filteredNews.length > 0}
         <div class="news-grid">
           {#each filteredNews as item}
-            <div class="news-card" on:click={() => selectedNews = item}>
+            <button 
+              class="news-card" 
+              on:click={() => selectedNews = item}
+              on:keydown={(e) => e.key === 'Enter' && (selectedNews = item)}
+              type="button"
+            >
               {#if showImages}
                 <div class="news-image-container">
                   {#if extractImageUrls(item.content).length > 0}
@@ -213,7 +218,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           {/each}
         </div>
       {:else}
@@ -333,6 +338,11 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    text-align: left;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .news-card:hover {
@@ -382,6 +392,9 @@
 
   .news-preview {
     padding: 1.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .news-preview h2 {
@@ -407,6 +420,7 @@
     align-items: center;
     padding-top: 0.75rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
   }
 
   .reactions {

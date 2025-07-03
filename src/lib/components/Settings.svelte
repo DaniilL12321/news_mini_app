@@ -141,11 +141,6 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  h1 {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.87);
-  }
-
   h2 {
     color: rgba(255, 255, 255, 0.87);
     font-size: 1.2rem;

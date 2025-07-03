@@ -142,7 +142,12 @@
     {#if relevantNews.length > 0}
       <div class="news-grid">
         {#each relevantNews as item}
-          <div class="news-card" on:click={() => selectedNews = item}>
+          <button 
+            class="news-card" 
+            on:click={() => selectedNews = item}
+            on:keydown={(e) => e.key === 'Enter' && (selectedNews = item)}
+            type="button"
+          >
             <div class="news-image-container">
               {#if extractImageUrls(item.content).length > 0}
                 <img 
@@ -179,7 +184,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         {/each}
       </div>
     {:else}
@@ -365,6 +370,11 @@
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    text-align: left;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .news-card:hover {
@@ -414,6 +424,9 @@
 
   .news-preview {
     padding: 1.25rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .news-preview h2 {
@@ -434,6 +447,7 @@
   }
 
   .news-footer {
+    margin-top: auto;
     display: flex;
     justify-content: space-between;
     align-items: center;

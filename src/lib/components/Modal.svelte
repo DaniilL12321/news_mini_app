@@ -1,18 +1,36 @@
-<script>
+<script lang="ts">
   import { fade, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
+  import { onMount } from 'svelte';
   
   export let show = false;
   export let onClose = () => {};
+
+  const handleKeydown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && show) {
+      onClose();
+    }
+  };
+
+  onMount(() => {
+    window.addEventListener('keydown', handleKeydown);
+    return () => {
+      window.removeEventListener('keydown', handleKeydown);
+    };
+  });
 </script>
 
-<div class="modal-backdrop" 
+<button class="modal-backdrop" 
      class:show
      on:click={onClose}
+     on:keydown={(e) => e.key === 'Escape' && onClose()}
+     type="button"
      transition:fade={{duration: 200}}>
-  <div class="modal-content"
+  <button class="modal-content"
        class:show
        on:click|stopPropagation
+       on:keydown|stopPropagation
+       type="button"
        transition:slide={{duration: 300, easing: quintOut}}>
     <button class="close-button" on:click={onClose}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,8 +38,8 @@
       </svg>
     </button>
     <slot />
-  </div>
-</div>
+  </button>
+</button>
 
 <style>
   .modal-backdrop {
@@ -38,6 +56,9 @@
     visibility: hidden;
     opacity: 0;
     transition: visibility 0s linear 0.2s, opacity 0.2s;
+    border: none;
+    padding: 0;
+    text-align: left;
   }
 
   .modal-backdrop.show {
@@ -61,6 +82,8 @@
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
     word-wrap: break-word;
     word-break: break-word;
+    border: none;
+    text-align: left;
   }
 
   .modal-content.show {

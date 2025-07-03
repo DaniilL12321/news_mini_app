@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
+import type { RequestHandler } from '@sveltejs/kit';
 import pg from 'pg';
 import 'dotenv/config';
 
@@ -9,11 +9,11 @@ const pool = new Pool({
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : undefined,
   database: process.env.DB_DATABASE
 });
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url }: { url: URL }) => {
   try {
     const sortBy = url.searchParams.get('sort') || 'date';
     const search = url.searchParams.get('search')?.toLowerCase();
