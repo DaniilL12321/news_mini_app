@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ fetch, url }) => {
+export const load = (async ({ fetch, url }: { fetch: (input: RequestInfo) => Promise<Response>, url: URL }) => {
   try {
     const searchQuery = url.searchParams.get('search') || '';
     const sortBy = url.searchParams.get('sort') || 'date';
@@ -10,15 +10,20 @@ export const load: PageLoad = async ({ fetch, url }) => {
     if (sortBy) searchParams.set('sort', sortBy);
 
     const response = await fetch(`/api/news?${searchParams.toString()}`);
-    const news = await response.json();
-    return { news, searchQuery, sortBy };
+    const data = await response.json();
+    return { 
+      ...data,
+      searchQuery, 
+      sortBy 
+    };
   } catch (error) {
     console.error('Error loading news:', error);
     return {
-      news: [],
+      items: [],
+      isCache: false,
       error: 'Failed to load news',
       searchQuery: '',
       sortBy: 'date'
     };
   }
-}; 
+}); 

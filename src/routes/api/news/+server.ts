@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 import pg from 'pg';
+import Redis from 'ioredis';
 import 'dotenv/config';
 
 const { Pool } = pg;
@@ -13,10 +14,26 @@ const pool = new Pool({
   database: process.env.DB_DATABASE
 });
 
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+  password: process.env.REDIS_PASSWORD,
+});
+
 export const GET: RequestHandler = async ({ url }: { url: URL }) => {
   try {
     const sortBy = url.searchParams.get('sort') || 'date';
     const search = url.searchParams.get('search')?.toLowerCase();
+
+    const cacheKey = `news:${sortBy}:${search || 'all'}`;
+
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      return json({
+        isCache: true,
+        items: JSON.parse(cachedData)
+      });
+    }
 
     let query = `
       SELECT n.*, 
@@ -52,10 +69,19 @@ export const GET: RequestHandler = async ({ url }: { url: URL }) => {
       ? await pool.query(query, [`%${search}%`])
       : await pool.query(query);
 
-    return json(result.rows);
+    await redis.set(cacheKey, JSON.stringify(result.rows), 'EX', 300);
+
+    return json({
+      isCache: false,
+      items: result.rows
+    });
   } catch (error) {
     console.error('Error fetching news:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch news' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Failed to fetch news',
+      isCache: false,
+      items: []
+    }), {
       status: 500,
       headers: {
         'Content-Type': 'application/json'

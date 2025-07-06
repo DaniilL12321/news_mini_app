@@ -80,7 +80,7 @@
     return 'Другое';
   }
 
-  $: processedNews = data.news?.map((item: NewsItem) => ({
+  $: processedNews = data.items?.map((item: NewsItem) => ({
     ...item,
     category: determineCategory(item)
   })) ?? [];
@@ -644,5 +644,15 @@
       padding: 0.4rem 0.8rem;
       font-size: 0.8rem;
     }
+  }
+
+  .cache-indicator {
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    margin: -0.5rem 0 1rem;
   }
 </style>
