@@ -4,6 +4,7 @@
   import BottomNav from '$lib/components/BottomNav.svelte';
   import Settings from '$lib/components/Settings.svelte';
   import AddressNews from '$lib/components/AddressNews.svelte';
+  import ImageCarousel from '$lib/components/ImageCarousel.svelte';
   import type { TelegramWebApp, TelegramWebAppUser } from '$lib/types/telegram';
   /** @type {import('./$types').PageData} */
   export let data;
@@ -118,14 +119,23 @@
 
   /** @param {string} content */
   function extractImageUrls(content: string): string[] {
-    const regex = /(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif))/g;
-    const matches = [...content.matchAll(regex)];
-    return matches.map(match => match[1]);
+    const regex = /(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*((?:https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif)(?:\s|$))+)/g;
+    const matches = content.match(regex);
+    if (!matches) return [];
+    
+    const urls: string[] = [];
+    matches.forEach(match => {
+      const urlMatches = match.match(/(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif))/g);
+      if (urlMatches) {
+        urls.push(...urlMatches);
+      }
+    });
+    return urls;
   }
 
   /** @param {string} content */
   function removeImageUrls(content: string): string {
-    return content.replace(/(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif)/g, '').trim();
+    return content.replace(/(?:📷|🖼️?)\s*(?:И|и)зображени(?:я|e)?:?\s*(?:https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif)(?:\s|$))+/g, '').trim();
   }
 
   /** @param {string} text */
@@ -262,14 +272,7 @@
       
       {#if showImages && extractImageUrls(selectedNews.content).length > 0}
         <div class="news-images">
-          {#each extractImageUrls(selectedNews.content) as imageUrl}
-            <img 
-              src={imageUrl} 
-              alt="Изображение к новости" 
-              class="news-image" 
-              loading="lazy" 
-            />
-          {/each}
+          <ImageCarousel images={extractImageUrls(selectedNews.content)} />
         </div>
       {/if}
       
@@ -363,6 +366,7 @@
     height: 200px;
     position: relative;
     overflow: hidden;
+    background: #1a1a1a;
   }
 
   .news-thumbnail {
@@ -471,9 +475,8 @@
 
   .news-images {
     margin: 1.5rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    border-radius: 12px;
+    overflow: hidden;
   }
 
   .news-image {
