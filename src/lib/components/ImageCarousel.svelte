@@ -42,26 +42,28 @@
   }
 
   function handleWheel(event: WheelEvent) {
-    event.preventDefault();
-    
-    const now = Date.now();
-    const timeDiff = now - lastWheelTime;
-    
-    wheelDelta += Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : 0;
-    
-    if (timeDiff > 500 && Math.abs(wheelDelta) > 50) {
-      if (wheelDelta > 0) {
-        next();
-      } else {
-        prev();
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      event.preventDefault();
+      
+      const now = Date.now();
+      const timeDiff = now - lastWheelTime;
+      
+      wheelDelta += event.deltaX;
+      
+      if (timeDiff > 500 && Math.abs(wheelDelta) > 50) {
+        if (wheelDelta > 0) {
+          next();
+        } else {
+          prev();
+        }
+        
+        wheelDelta = 0;
+        lastWheelTime = now;
       }
       
-      wheelDelta = 0;
-      lastWheelTime = now;
-    }
-    
-    if (timeDiff > 1000) {
-      wheelDelta = 0;
+      if (timeDiff > 1000) {
+        wheelDelta = 0;
+      }
     }
   }
 </script>
@@ -73,7 +75,7 @@
     on:touchstart={handleTouchStart}
     on:touchmove={handleTouchMove}
     on:touchend={handleTouchEnd}
-    on:wheel|preventDefault={handleWheel}
+    on:wheel={handleWheel}
   >
     <div class="carousel-container">
       <img 
