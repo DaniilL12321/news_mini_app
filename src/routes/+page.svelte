@@ -144,11 +144,29 @@
     if (cleanText.length <= maxLength) return cleanText;
     return cleanText.slice(0, maxLength) + '...';
   }
+
+  let pageTitle = "Новости города Нерехта - официальное приложение";
+  let pageDescription = "Актуальные новости города Нерехта: отключения, ремонтные работы, события и важная информация для жителей.";
+
+  $: if (selectedCategory) {
+    pageTitle = `${selectedCategory} - Новости города Нерехта`;
+    pageDescription = `Актуальные новости города Нерехта в категории "${selectedCategory}". Оперативная информация для жителей города.`;
+  }
+
+  $: if (searchQuery) {
+    pageTitle = `Поиск: ${searchQuery} - Новости города Нерехта`;
+    pageDescription = `Результаты поиска по запросу "${searchQuery}" в новостях города Нерехта.`;
+  }
 </script>
 
-<div class="container" class:no-images={!showImages}>
+<svelte:head>
+  <title>{pageTitle}</title>
+  <meta name="description" content={pageDescription} />
+</svelte:head>
+
+<main class="container" class:no-images={!showImages}>
   {#if showTelegramPrompt}
-    <div class="telegram-prompt">
+    <section class="telegram-prompt" aria-label="Предложение открыть в Telegram">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -159,43 +177,47 @@
       <a href="https://t.me/your_bot_username/app" class="telegram-button">
         Открыть миниапу
       </a>
-    </div>
+    </section>
   {:else}
     {#if activeTab === 'news'}
-      <h1>Новости</h1>
-      <SearchBar bind:value={searchQuery} />
-      
-      <div class="categories-chips">
-        <button 
-          class="category-chip" 
-          class:active={selectedCategory === null}
-          on:click={() => selectedCategory = null}
-        >
-          <span>🔍 Все</span>
-          <span class="count">{processedNews.length}</span>
-        </button>
-        {#each categoryCounts as { emoji, name, count }}
+      <header>
+        <h1>Новости города Нерехта</h1>
+        <nav class="categories-chips" aria-label="Категории новостей">
           <button 
             class="category-chip" 
-            class:active={selectedCategory === name}
-            on:click={() => selectedCategory = selectedCategory === name ? null : name}
+            class:active={selectedCategory === null}
+            on:click={() => selectedCategory = null}
           >
-            <span>{emoji} {name}</span>
-            <span class="count">{count}</span>
+            <span>🔍 Все</span>
+            <span class="count">{processedNews.length}</span>
           </button>
-        {/each}
-      </div>
+          {#each categoryCounts as { emoji, name, count }}
+            <button 
+              class="category-chip" 
+              class:active={selectedCategory === name}
+              on:click={() => selectedCategory = selectedCategory === name ? null : name}
+            >
+              <span>{emoji} {name}</span>
+              <span class="count">{count}</span>
+            </button>
+          {/each}
+        </nav>
+      </header>
+
+      <section class="search-section" aria-label="Поиск новостей">
+        <SearchBar bind:value={searchQuery} />
+      </section>
 
       {#if 'error' in data && data.error}
-        <div class="error">Ошибка: {data.error}</div>
+        <section class="error" role="alert">Ошибка: {data.error}</section>
       {:else if filteredNews.length > 0}
-        <div class="news-grid">
+        <section class="news-grid" aria-label="Список новостей">
           {#each filteredNews as item}
-            <button 
+            <article 
               class="news-card" 
               on:click={() => selectedNews = item}
               on:keydown={(e) => e.key === 'Enter' && (selectedNews = item)}
-              type="button"
+              role="article"
             >
               {#if showImages}
                 <div class="news-image-container">
@@ -235,16 +257,16 @@
                   </div>
                 </div>
               </div>
-            </button>
+            </article>
           {/each}
-        </div>
+        </section>
       {:else}
-        <div class="no-results">
+        <section class="no-results" aria-label="Новости не найдены">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="currentColor"/>
           </svg>
           <p>Новости не найдены</p>
-        </div>
+        </section>
       {/if}
     {:else if activeTab === 'address'}
       <AddressNews news={processedNews} />
@@ -257,16 +279,52 @@
       />
     {/if}
   {/if}
-</div>
 
-<BottomNav bind:activeTab />
+  {#if activeTab === 'news' && filteredNews.length > 0}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": ${JSON.stringify(filteredNews.map((item, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "item": {
+            "@type": "NewsArticle",
+            "headline": item.title,
+            "articleBody": removeImageUrls(item.content),
+            "datePublished": item.date,
+            "image": extractImageUrls(item.content),
+            "author": {
+              "@type": "Organization",
+              "name": "Администрация города Нерехта"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Новости города Нерехта",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Нерехта",
+                "addressRegion": "Костромская область",
+                "addressCountry": "Россия"
+              }
+            }
+          }
+        })))}
+      }
+    </script>
+  {/if}
+</main>
+
+<nav class="bottom-nav" aria-label="Основная навигация">
+  <BottomNav bind:activeTab />
+</nav>
 
 {#if selectedNews}
   <Modal 
     show={true} 
     onClose={() => selectedNews = null}
   >
-    <div class="modal-news">
+    <article class="modal-news" role="article">
       <h2>{selectedNews.title}</h2>
       <div class="news-date">{formatDate(selectedNews.date)}</div>
       
@@ -298,7 +356,7 @@
           👎 {selectedNews.dislikes_count}
         </span>
       </div>
-    </div>
+    </article>
   </Modal>
 {/if}
 

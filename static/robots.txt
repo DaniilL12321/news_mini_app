@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Sitemap: https://nerekhta-news.netlify.app/sitemap.xml
+
+User-agent: Yandex
+Allow: /
+Clean-param: utm_source&utm_medium&utm_campaign
+Host: https://nerekhta-news.netlify.app/
