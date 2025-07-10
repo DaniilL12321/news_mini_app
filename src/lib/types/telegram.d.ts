@@ -13,6 +13,9 @@ interface TelegramWebAppInitData {
   hash?: string;
 }
 
+type HapticFeedbackImpactStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft';
+type HapticFeedbackNotificationType = 'error' | 'success' | 'warning';
+
 interface TelegramWebApp {
   initData: string;
   initDataUnsafe: TelegramWebAppInitData;
@@ -36,6 +39,11 @@ interface TelegramWebApp {
   expand(): void;
   close(): void;
   openTelegramLink(url: string): void;
+  HapticFeedback: {
+    impactOccurred: (style: HapticFeedbackImpactStyle) => void;
+    notificationOccurred: (type: HapticFeedbackNotificationType) => void;
+    selectionChanged: () => void;
+  };
 }
 
 interface Telegram {
@@ -48,4 +56,4 @@ declare global {
   }
 }
 
-export type { TelegramWebAppUser, TelegramWebAppInitData, TelegramWebApp }; 
+export type { TelegramWebAppUser, TelegramWebAppInitData, TelegramWebApp, HapticFeedbackImpactStyle, HapticFeedbackNotificationType }; 

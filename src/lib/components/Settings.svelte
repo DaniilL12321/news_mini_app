@@ -27,8 +27,17 @@
     }
   }
 
+  function handleSettingChange() {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+  }
+
   function openTelegramProfile() {
     if (window?.Telegram?.WebApp?.openTelegramLink) {
+      if (window?.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+      }
       window.Telegram.WebApp.openTelegramLink('https://t.me/your_bot_username');
     }
   }
@@ -78,6 +87,7 @@
             type="radio" 
             bind:group={sortBy} 
             value="date"
+            on:change={handleSettingChange}
           >
           <span>По дате</span>
         </label>
@@ -86,6 +96,7 @@
             type="radio" 
             bind:group={sortBy} 
             value="popularity"
+            on:change={handleSettingChange}
           >
           <span>По популярности</span>
         </label>
@@ -99,6 +110,7 @@
         <input 
           type="checkbox" 
           bind:checked={showImages}
+          on:change={handleSettingChange}
         >
         <div class="toggle-slider"></div>
       </label>
@@ -107,6 +119,7 @@
         <input 
           type="checkbox" 
           bind:checked={darkMode}
+          on:change={handleSettingChange}
         >
         <div class="toggle-slider"></div>
       </label>

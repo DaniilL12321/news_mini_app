@@ -6,9 +6,16 @@
   export let show = false;
   export let onClose = () => {};
 
+  function handleClose() {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+    }
+    onClose();
+  }
+
   const handleKeydown = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && show) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -22,8 +29,8 @@
 
 <button class="modal-backdrop" 
      class:show
-     on:click={onClose}
-     on:keydown={(e) => e.key === 'Escape' && onClose()}
+     on:click={handleClose}
+     on:keydown={(e) => e.key === 'Escape' && handleClose()}
      type="button"
      transition:fade={{duration: 200}}>
   <button class="modal-content"
@@ -32,7 +39,7 @@
        on:keydown|stopPropagation
        type="button"
        transition:slide={{duration: 300, easing: quintOut}}>
-    <button class="close-button" on:click={onClose}>
+    <button class="close-button" on:click={handleClose}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>

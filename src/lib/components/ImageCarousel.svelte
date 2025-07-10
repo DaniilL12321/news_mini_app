@@ -9,14 +9,23 @@
   let wheelDelta = 0;
   
   function next() {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
     currentIndex = (currentIndex + 1) % images.length;
   }
   
   function prev() {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
     currentIndex = (currentIndex - 1 + images.length) % images.length;
   }
 
   function goToSlide(index: number) {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
     currentIndex = index;
   }
 

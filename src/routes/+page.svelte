@@ -70,6 +70,20 @@
 
   $: showTelegramPrompt = !isInTelegramWebApp && activeTab === 'settings';
 
+  function handleCategoryChange(newCategory: string | null) {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+    selectedCategory = selectedCategory === newCategory ? null : newCategory;
+  }
+
+  function handleNewsSelect(item: NewsItem) {
+    if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+      window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+    }
+    selectedNews = item;
+  }
+
   function determineCategory(item: NewsItem): string {
     const text = `${item.title} ${item.content}`.toLowerCase();
     for (const category of categories) {
@@ -186,7 +200,7 @@
           <button 
             class="category-chip" 
             class:active={selectedCategory === null}
-            on:click={() => selectedCategory = null}
+            on:click={() => handleCategoryChange(null)}
           >
             <span>🔍 Все</span>
             <span class="count">{processedNews.length}</span>
@@ -195,7 +209,7 @@
             <button 
               class="category-chip" 
               class:active={selectedCategory === name}
-              on:click={() => selectedCategory = selectedCategory === name ? null : name}
+              on:click={() => handleCategoryChange(name)}
             >
               <span>{emoji} {name}</span>
               <span class="count">{count}</span>
@@ -215,8 +229,8 @@
           {#each filteredNews as item}
             <article 
               class="news-card" 
-              on:click={() => selectedNews = item}
-              on:keydown={(e) => e.key === 'Enter' && (selectedNews = item)}
+              on:click={() => handleNewsSelect(item)}
+              on:keydown={(e) => e.key === 'Enter' && handleNewsSelect(item)}
               role="article"
             >
               {#if showImages}

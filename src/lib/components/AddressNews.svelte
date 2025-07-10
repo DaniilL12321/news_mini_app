@@ -41,6 +41,9 @@
 
   function saveAddress() {
     if (street && house) {
+      if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+      }
       addressStore.set({ street, house });
       editMode = false;
     }
@@ -144,7 +147,12 @@
         {#each relevantNews as item}
           <button 
             class="news-card" 
-            on:click={() => selectedNews = item}
+            on:click={() => {
+              if (typeof window !== 'undefined' && window?.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+              }
+              selectedNews = item;
+            }}
             on:keydown={(e) => e.key === 'Enter' && (selectedNews = item)}
             type="button"
           >
