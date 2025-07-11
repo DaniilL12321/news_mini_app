@@ -6,6 +6,7 @@
   import AddressNews from '$lib/components/AddressNews.svelte';
   import ImageCarousel from '$lib/components/ImageCarousel.svelte';
   import type { TelegramWebApp, TelegramWebAppUser } from '$lib/types/telegram';
+  import { onMount } from 'svelte';
   /** @type {import('./$types').PageData} */
   export let data;
 
@@ -171,6 +172,43 @@
     pageTitle = `Поиск: ${searchQuery} - Новости города Нерехта`;
     pageDescription = `Результаты поиска по запросу "${searchQuery}" в новостях города Нерехта.`;
   }
+
+  let visibleNewsCount = 20;
+  let isLoading = false;
+  let observer: IntersectionObserver;
+  let loadMoreTrigger: HTMLDivElement;
+
+  onMount(() => {
+    observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !isLoading) {
+        loadMore();
+      }
+    }, {
+      rootMargin: '100px'
+    });
+
+    if (loadMoreTrigger) {
+      observer.observe(loadMoreTrigger);
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  });
+
+  function loadMore() {
+    if (isLoading) return;
+    isLoading = true;
+    setTimeout(() => {
+      visibleNewsCount += 20;
+      isLoading = false;
+    }, 100);
+  }
+
+  $: visibleNews = filteredNews.slice(0, visibleNewsCount);
+  $: hasMore = visibleNewsCount < filteredNews.length;
 </script>
 
 <svelte:head>
@@ -226,7 +264,7 @@
         <section class="error" role="alert">Ошибка: {data.error}</section>
       {:else if filteredNews.length > 0}
         <section class="news-grid" aria-label="Список новостей">
-          {#each filteredNews as item}
+          {#each visibleNews as item}
             <article 
               class="news-card" 
               on:click={() => handleNewsSelect(item)}
@@ -273,6 +311,11 @@
               </div>
             </article>
           {/each}
+          {#if hasMore}
+            <div class="load-more-trigger" bind:this={loadMoreTrigger}>
+              <div class="loading-spinner"></div>
+            </div>
+          {/if}
         </section>
       {:else}
         <section class="no-results" aria-label="Новости не найдены">
@@ -413,18 +456,44 @@
     gap: 1.5rem;
   }
 
+  .load-more-trigger {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    height: 100px;
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: #2563eb;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   .news-card {
+    margin-bottom: 1.5rem;
     background: #1e1e1e;
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(255, 255, 255, 0.1);
     width: 100%;
     text-align: left;
     padding: 0;
     display: flex;
     flex-direction: column;
+    will-change: transform;
   }
 
   .news-card:hover {

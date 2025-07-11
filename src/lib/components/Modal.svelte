@@ -38,7 +38,8 @@
        on:click|stopPropagation
        on:keydown|stopPropagation
        type="button"
-       transition:slide={{duration: 300, easing: quintOut}}>
+       style="will-change: transform"
+       transition:slide={{duration: 200, easing: quintOut}}>
     <button class="close-button" on:click={handleClose}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -62,10 +63,11 @@
     z-index: 1000;
     visibility: hidden;
     opacity: 0;
-    transition: visibility 0s linear 0.2s, opacity 0.2s;
+    transition: visibility 0s linear 0.15s, opacity 0.15s;
     border: none;
     padding: 0;
     text-align: left;
+    will-change: opacity;
   }
 
   .modal-backdrop.show {
@@ -85,12 +87,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
     word-wrap: break-word;
     word-break: break-word;
     border: none;
     text-align: left;
+    will-change: transform;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modal-content.show {
